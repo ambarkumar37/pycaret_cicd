@@ -16,3 +16,4 @@ Read the complete post: https://medium.com/@moez_62905/deploy-machine-learning-m
 - YouTube : https://www.youtube.com/channel/UCxA1YTYJ9BEeo50lxyI_B3g 
 
 - PyCaret's Repository : https://www.github.com/pycaret/pycaret
+

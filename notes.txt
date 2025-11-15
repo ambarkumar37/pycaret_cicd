@@ -1,0 +1,217 @@
+#old
+
+ROM python:3.7
+
+RUN pip install virtualenv
+ENV VIRTUAL_ENV=/venv
+RUN virtualenv venv -p python3
+ENV PATH="VIRTUAL_ENV/bin:$PATH"
+
+WORKDIR /app
+ADD . /app
+
+# Install dependencies
+RUN pip install -r requirements.txt
+
+# Expose port 
+ENV PORT 8080
+
+# Run the application:
+CMD ["gunicorn", "app:app", "--config=config.py"]
+
+
+#new
+
+name: Docker CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        run: |
+          docker build -t pycaret-app-ci .
+
+📝 What this pipeline does
+On every push or pull request to the main branch:
+
+Clones your repo
+
+Sets up Docker
+
+Builds your Docker image using your Dockerfile:
+
+docker build -t pycaret-app-ci .
+
+
+If your Dockerfile or code breaks, the CI fails.
+
+
+# push to docker hub
+
+name: Docker CI/CD
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/pycaret-app:latest
+
+What this pipeline does
+On every push to main:
+
+Checks out your code
+
+Logs into Docker Hub
+
+Builds Docker image
+
+Pushes it to Docker Hub
+
+Your image will appear at:
+
+docker.io/<your-username>/pycaret-app:latest
+
+
+Example:
+
+docker.io/john123/pycaret-app:latest
+
+🧪 Test on your machine
+
+Once pushed, you can pull it:
+
+docker pull youruser/pycaret-app:latest
+docker run -p 8080:8080 youruser/pycaret-app:latest
+
+Here are the exact steps to add your Docker Hub username and token as GitHub Secrets.
+
+Follow this carefully — it takes less than 2 minutes.
+
+✅ STEP 1 — Create a Docker Hub Access Token
+
+Go to:
+https://hub.docker.com/settings/security
+
+Scroll to Access Tokens
+
+Click Create Access Token
+
+Give it any name, for example:
+
+github-ci-token
+
+
+Copy the generated token → SAVE IT
+(You won't see it again!)
+
+You will use this token instead of your Docker Hub password.
+
+✅ STEP 2 — Add GitHub Secrets
+
+Open your GitHub repository
+
+Click Settings
+
+On the left menu: Secrets and variables → Actions
+
+Click New repository secret
+
+Now add these two secrets:
+
+🔹 Secret 1 — Docker Hub Username
+
+Name:
+
+DOCKERHUB_USERNAME
+
+
+Value:
+Your Docker Hub username
+Example:
+
+john123
+
+
+Click Add secret
+
+🔹 Secret 2 — Docker Hub Token
+
+Name:
+
+DOCKERHUB_TOKEN
+
+
+Value:
+Paste the token you generated in Step 1.
+
+Click Add secret
+
+🎉 You're done!
+
+Now your GitHub Actions workflow can log in to Docker Hub using:
+
+username: ${{ secrets.DOCKERHUB_USERNAME }}
+password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+🚀 Test the pipeline
+
+Push any change to your main branch:
+
+git add .
+git commit -m "Test CI push"
+git push
+
+
+Then go to:
+
+GitHub → Repo → Actions → Docker CI/CD
+
+You should see:
+
+🟦 Build start
+
+🟩 Build done
+
+🟩 Docker push successful

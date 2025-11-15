@@ -1,18 +1,18 @@
-FROM python:3.7
-
-RUN pip install virtualenv
-ENV VIRTUAL_ENV=/venv
-RUN virtualenv venv -p python3
-ENV PATH="VIRTUAL_ENV/bin:$PATH"
+FROM python:3.11-slim-bullseye
 
 WORKDIR /app
-ADD . /app
 
-# Install dependencies
-RUN pip install -r requirements.txt
+# System dependency needed for PyCaret / LightGBM / XGBoost
+RUN apt-get update && apt-get install -y \
+    libgomp1 \
+    && rm -rf /var/lib/apt/lists/*
 
-# Expose port 
-ENV PORT 8080
+# Copy project
+COPY . /app
 
-# Run the application:
-CMD ["gunicorn", "app:app", "--config=config.py"]
+# Install project dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+EXPOSE 8080
+
+CMD ["python", "app.py"]
